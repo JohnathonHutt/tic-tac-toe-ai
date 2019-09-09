@@ -14,8 +14,26 @@ const bl = document.getElementById('bl');
 const bm = document.getElementById('bm');
 const br = document.getElementById('br');
 
-let diff = 'e';
-let gameOver = false;
+let diff;
+let gameOver = true;
+let numPlayerMoves = 0;
+
+const diffButtons = document.getElementById('diffButtons');
+
+diffButtons.addEventListener('click', function(e) {
+  diff = e.target.id;
+  gameOver = false;
+  document.getElementById(diff).classList.add('pressed');
+  let buttons = ['e', 'm', 'h'];
+  for (let i = 0; i < buttons.length; i++) {
+    if (buttons[i] !== diff) {
+      let button = document.getElementById(buttons[i]);
+      if (button.classList.contains('pressed')) {
+        button.classList.remove('pressed');
+      }
+    }
+  }
+});
 
 gameBoard.addEventListener('click', monitorGame);
 
@@ -24,8 +42,13 @@ function monitorGame(e) {
   let clickedElem = document.getElementById(e.target.id);
   addLetter(elemId, clickedElem);
   checkForWin('X');
+  checkForAndDisplayDraw();
   if (diff === 'e' && !gameOver) {
     setTimeout(aiTurnEasy, 500);
+  } else if (diff === 'm' && !gameOver) {
+    setTimeout(aiTurnMedium, 500);
+  } else if (diff === 'h' && !gameOver) {
+    setTimeout(aiTurnUltron, 500);
   }
 }
 
@@ -44,19 +67,23 @@ const gameObject = {
 const gameArray = ["tl", "tm", "tr", "ml", "mm", "mr", "bl", "bm", "br"];
 
 function addLetter(elemId, clickedElem) {
-  if (gameObject[elemId] !== 'X' || gameObject[elemId] !== 'O') {
-    gameObject[elemId] = 'X';
-    clickedElem.innerHTML = 'X';
-    clickedElem.classList.add('x');
-    console.log(gameObject);
-    remArrVal(gameArray, elemId);
+  if (!gameOver) {
+    if (gameObject[elemId] !== 'X' && gameObject[elemId] !== 'O') {
+      gameObject[elemId] = 'X';
+      clickedElem.innerHTML = 'X';
+      clickedElem.classList.add('x');
+      remArrVal(gameArray, elemId);
+      numPlayerMoves += 1;
+      console.log(numPlayerMoves);
+    }
+    checkForWin('X');
   }
 }
 
 function aiTurnEasy() {
+  //assigns a square at random
   if (gameArray.length > 0) {
     let aIElemId = gameArray[Math.floor(Math.random() * gameArray.length)];
-    console.log('Random elem: ' + aIElemId);
     gameObject[aIElemId] = 'O';
     let aIElem = document.getElementById(aIElemId);
     aIElem.innerHTML = 'O';
@@ -67,11 +94,172 @@ function aiTurnEasy() {
 }
 
 function aiTurnMedium() {
-  //check for AI win
-  //iterate through all possible choices - check for win have it return true - play that
-  //check for and block player win
-  //iterate through all possible moves - check for X win have it return true, play that
-  //place high value move
+  let haveMoved = false;
+
+  for (let i = 0; i < gameArray.length; i++) {
+    gameObject[gameArray[i]] = 'O';
+    if (checkAiMove('O')) {
+      let currSquare = document.getElementById(gameArray[i]);
+      currSquare.innerHTML = 'O';
+      currSquare.classList.add('o');
+      remArrVal(gameArray, gameArray[i]);
+      haveMoved = true;
+      break;
+    } else {
+      gameObject[gameArray[i]] = null;
+    }
+  }
+
+  if (!haveMoved) {
+    for (let i = 0; i < gameArray.length; i++) {
+      gameObject[gameArray[i]] = 'X';
+      if (checkAiMove('X')) {
+        gameObject[gameArray[i]] = 'O';
+        let currSquare = document.getElementById(gameArray[i]);
+        currSquare.innerHTML = 'O';
+        currSquare.classList.add('o');
+        remArrVal(gameArray, gameArray[i]);
+        haveMoved = true;
+        break;
+      } else {
+        gameObject[gameArray[i]] = null;
+      }
+    }
+  }
+
+  if (!haveMoved && gameArray.length > 0) {
+    let aIElemId = gameArray[Math.floor(Math.random() * gameArray.length)];
+    gameObject[aIElemId] = 'O';
+    let aIElem = document.getElementById(aIElemId);
+    aIElem.innerHTML = 'O';
+    aIElem.classList.add('o');
+    remArrVal(gameArray, aIElemId);
+  }
+  checkForWin('O');
+}
+
+function aiTurnUltron() {
+  let haveMoved = false;
+  //check for wins
+  for (let i = 0; i < gameArray.length; i++) {
+    gameObject[gameArray[i]] = 'O';
+    if (checkAiMove('O')) {
+      let currSquare = document.getElementById(gameArray[i]);
+      currSquare.innerHTML = 'O';
+      currSquare.classList.add('o');
+      remArrVal(gameArray, gameArray[i]);
+      haveMoved = true;
+      break;
+    } else {
+      gameObject[gameArray[i]] = null;
+    }
+  }
+  //prevent opponent wins
+  if (!haveMoved) {
+    for (let i = 0; i < gameArray.length; i++) {
+      gameObject[gameArray[i]] = 'X';
+      if (checkAiMove('X')) {
+        gameObject[gameArray[i]] = 'O';
+        let currSquare = document.getElementById(gameArray[i]);
+        currSquare.innerHTML = 'O';
+        currSquare.classList.add('o');
+        remArrVal(gameArray, gameArray[i]);
+        haveMoved = true;
+        break;
+      } else {
+        gameObject[gameArray[i]] = null;
+      }
+    }
+  }
+
+  if (!haveMoved) {
+    if (numPlayerMoves === 1 && gameObject.mm === null) {
+      assignSquareO('mm');
+    } else if (numPlayerMoves === 2 && gameObject.mm === 'O') {
+      assignEdgeO();
+    } else if (isThereAnEmptyCorner()){
+      assignCornerO();
+    } else {
+      assignEdgeO();
+    }
+  }
+
+  checkForWin('O');
+}
+
+function assignSquareO(spaceId) {
+  //spaceId is a lower case string e.g. 'tl'
+  gameObject[spaceId] = 'O';
+  let currSquare = document.getElementById(spaceId);
+  currSquare.innerHTML = 'O';
+  currSquare.classList.add('o');
+  remArrVal(gameArray, spaceId);
+}
+
+function assignEdgeO() {
+  let isThereAGoodEdge = false;
+  let edges = ['tm', 'ml', 'mr', 'bm'];
+  let oppEdges = {tm: 'bm', bm: 'tm', ml: 'mr', mr: 'ml'};
+  for (let i = 0; i < edges.length; i++) {
+    //maybe add another check if space is 'O'
+    if (gameObject[edges[i]] === null && gameObject[oppEdges[edges[i]]] === null) {
+      assignSquareO(edges[i]);
+      isThereAGoodEdge = true;
+      console.log(isThereAGoodEdge);
+      break;
+    }
+  }
+  if (!isThereAGoodEdge) {
+    for (let i = 0; i < edges.length; i++) {
+      if (gameObject[edges[i]] === null) {
+        assignSquareO(edges[i]);
+        break;
+      }
+    }
+  }
+}
+
+function assignCornerO() {
+  let corners = ['tl', 'tr', 'bl', 'br'];
+  for (let i = 0; i < corners.length; i++) {
+    if (gameObject[corners[i]] === null) {
+      assignSquareO(corners[i]);
+      break;
+    }
+  }
+}
+
+function isThereAnEmptyCorner() {
+  let corners = ['tl', 'tr', 'bl', 'br'];
+  for (let i = 0; i < corners.length; i++) {
+    if (gameObject[corners[i]] === null) {
+      return true;
+    }
+  }
+}
+
+function checkAiMove(value) {
+  if (gameObject.tl === value && gameObject.tm === value && gameObject.tr === value) {
+    return true;
+  } else if (gameObject.ml === value && gameObject.mm === value && gameObject.mr === value) {
+    return true;
+  } else if (gameObject.bl === value && gameObject.bm === value && gameObject.br === value) {
+    return true;
+
+    //vertical
+  } else if (gameObject.tl === value && gameObject.ml === value && gameObject.bl === value) {
+    return true;
+  } else if (gameObject.tm === value && gameObject.mm === value && gameObject.bm === value) {
+    return true;
+  } else if (gameObject.tr === value && gameObject.mr === value && gameObject.br === value) {
+    return true;
+
+    //diagonal
+  } else if (gameObject.tl === value && gameObject.mm === value && gameObject.br === value) {
+    return true;
+  } else if (gameObject.tr === value && gameObject.mm === value && gameObject.bl === value) {
+    return true;
+  }
 }
 
 function checkForWin(value) {
@@ -138,6 +326,17 @@ function displayWin(value) {
   title.addEventListener('click', function() {
     document.location.reload();
   });
+}
+
+function checkForAndDisplayDraw() {
+  //checks gameArray for remaining moves
+  if (gameArray.length === 0) {
+    gameBoard.removeEventListener('click', monitorGame);
+    title.innerHTML = "It's a Draw. Click To Play Again.";
+    title.addEventListener('click', function() {
+      document.location.reload();
+    });
+  }
 }
 
 function remArrVal(arr, value) {
