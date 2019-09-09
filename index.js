@@ -17,6 +17,7 @@ const br = document.getElementById('br');
 let diff;
 let gameOver = true;
 let numPlayerMoves = 0;
+let didPlayerGo = false;
 
 const diffButtons = document.getElementById('diffButtons');
 
@@ -43,13 +44,15 @@ function monitorGame(e) {
   addLetter(elemId, clickedElem);
   checkForWin('X');
   checkForAndDisplayDraw();
-  if (diff === 'e' && !gameOver) {
+  console.log('did player go outside addLetter: ' + didPlayerGo);
+  if (diff === 'e' && !gameOver && didPlayerGo) {
     setTimeout(aiTurnEasy, 500);
-  } else if (diff === 'm' && !gameOver) {
+  } else if (diff === 'm' && !gameOver && didPlayerGo) {
     setTimeout(aiTurnMedium, 500);
-  } else if (diff === 'h' && !gameOver) {
+  } else if (diff === 'h' && !gameOver && didPlayerGo) {
     setTimeout(aiTurnUltron, 500);
   }
+  didPlayerGo = false;
 }
 
 const gameObject = {
@@ -69,6 +72,8 @@ const gameArray = ["tl", "tm", "tr", "ml", "mm", "mr", "bl", "bm", "br"];
 function addLetter(elemId, clickedElem) {
   if (!gameOver) {
     if (gameObject[elemId] !== 'X' && gameObject[elemId] !== 'O') {
+      didPlayerGo = true;
+      console.log('did player go in add letter if : ' + didPlayerGo);
       gameObject[elemId] = 'X';
       clickedElem.innerHTML = 'X';
       clickedElem.classList.add('x');
