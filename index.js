@@ -44,7 +44,7 @@ function monitorGame(e) {
   addLetter(elemId, clickedElem);
   checkForWin('X');
   checkForAndDisplayDraw();
-  console.log('did player go outside addLetter: ' + didPlayerGo);
+
   if (diff === 'e' && !gameOver && didPlayerGo) {
     setTimeout(aiTurnEasy, 500);
   } else if (diff === 'm' && !gameOver && didPlayerGo) {
@@ -73,34 +73,25 @@ function addLetter(elemId, clickedElem) {
   if (!gameOver) {
     if (gameObject[elemId] !== 'X' && gameObject[elemId] !== 'O') {
       didPlayerGo = true;
-      console.log('did player go in add letter if : ' + didPlayerGo);
-      gameObject[elemId] = 'X';
-      clickedElem.innerHTML = 'X';
-      clickedElem.classList.add('x');
-      remArrVal(gameArray, elemId);
+      assignSquareX(elemId);
       numPlayerMoves += 1;
-      console.log(numPlayerMoves);
     }
     checkForWin('X');
   }
 }
 
 function aiTurnEasy() {
-  //assigns a square at random
+  //plays a square at random from remaining squares, then checks for win
   if (gameArray.length > 0) {
     let aIElemId = gameArray[Math.floor(Math.random() * gameArray.length)];
-    gameObject[aIElemId] = 'O';
-    let aIElem = document.getElementById(aIElemId);
-    aIElem.innerHTML = 'O';
-    aIElem.classList.add('o');
-    remArrVal(gameArray, aIElemId);
+    assignSquareO(aIElemId);
   }
   checkForWin('O');
 }
 
 function aiTurnMedium() {
   let haveMoved = false;
-
+  //checks remaining moves for a win, plays if found
   for (let i = 0; i < gameArray.length; i++) {
     gameObject[gameArray[i]] = 'O';
     if (checkAiMove('O')) {
@@ -114,7 +105,7 @@ function aiTurnMedium() {
       gameObject[gameArray[i]] = null;
     }
   }
-
+  //"plays" for X, if X would win play to block X win
   if (!haveMoved) {
     for (let i = 0; i < gameArray.length; i++) {
       gameObject[gameArray[i]] = 'X';
@@ -134,18 +125,14 @@ function aiTurnMedium() {
 
   if (!haveMoved && gameArray.length > 0) {
     let aIElemId = gameArray[Math.floor(Math.random() * gameArray.length)];
-    gameObject[aIElemId] = 'O';
-    let aIElem = document.getElementById(aIElemId);
-    aIElem.innerHTML = 'O';
-    aIElem.classList.add('o');
-    remArrVal(gameArray, aIElemId);
+    assignSquareO(aIElemId);
   }
   checkForWin('O');
 }
 
 function aiTurnUltron() {
   let haveMoved = false;
-  //check for wins
+  //checks remaining moves for a win, plays if found
   for (let i = 0; i < gameArray.length; i++) {
     gameObject[gameArray[i]] = 'O';
     if (checkAiMove('O')) {
@@ -159,7 +146,7 @@ function aiTurnUltron() {
       gameObject[gameArray[i]] = null;
     }
   }
-  //prevent opponent wins
+  //"plays" for X, if X would win play to block X win
   if (!haveMoved) {
     for (let i = 0; i < gameArray.length; i++) {
       gameObject[gameArray[i]] = 'X';
@@ -176,7 +163,7 @@ function aiTurnUltron() {
       }
     }
   }
-
+  //play middle if not assigned, then edge || play corners (if middle was chosen)
   if (!haveMoved) {
     if (numPlayerMoves === 1 && gameObject.mm === null) {
       assignSquareO('mm');
@@ -188,7 +175,6 @@ function aiTurnUltron() {
       assignEdgeO();
     }
   }
-
   checkForWin('O');
 }
 
@@ -201,16 +187,23 @@ function assignSquareO(spaceId) {
   remArrVal(gameArray, spaceId);
 }
 
+function assignSquareX(spaceId) {
+  //spaceId is a lower case string e.g. 'tl'
+  gameObject[spaceId] = 'X';
+  let currSquare = document.getElementById(spaceId);
+  currSquare.innerHTML = 'X';
+  currSquare.classList.add('x');
+  remArrVal(gameArray, spaceId);
+}
+
 function assignEdgeO() {
   let isThereAGoodEdge = false;
   let edges = ['tm', 'ml', 'mr', 'bm'];
   let oppEdges = {tm: 'bm', bm: 'tm', ml: 'mr', mr: 'ml'};
   for (let i = 0; i < edges.length; i++) {
-    //maybe add another check if space is 'O'
     if (gameObject[edges[i]] === null && gameObject[oppEdges[edges[i]]] === null) {
       assignSquareO(edges[i]);
       isThereAGoodEdge = true;
-      console.log(isThereAGoodEdge);
       break;
     }
   }
@@ -244,6 +237,9 @@ function isThereAnEmptyCorner() {
 }
 
 function checkAiMove(value) {
+  //value is 'X' or 'O'
+  //tests whether a given move will result in a win
+  //horizontal
   if (gameObject.tl === value && gameObject.tm === value && gameObject.tr === value) {
     return true;
   } else if (gameObject.ml === value && gameObject.mm === value && gameObject.mr === value) {
@@ -268,6 +264,8 @@ function checkAiMove(value) {
 }
 
 function checkForWin(value) {
+  //value is 'X' or 'O' - checks and displays win if present for player or AI depending on value
+  //horizontal
   if (gameObject.tl === value && gameObject.tm === value && gameObject.tr === value) {
     tl.classList.add('win');
     tm.classList.add('win');
@@ -324,6 +322,8 @@ function checkForWin(value) {
 }
 
 function displayWin(value) {
+  //value is 'X' or 'O'
+  //displays winning message, click title to restart
   gameBoard.removeEventListener('click', monitorGame);
   let msg;
   (value === 'X') ? msg = 'You Won! ': msg = 'OOh, So Close... ';
@@ -334,7 +334,7 @@ function displayWin(value) {
 }
 
 function checkForAndDisplayDraw() {
-  //checks gameArray for remaining moves
+  //checks gameArray for remaining moves, if none displays draw message, click to reload
   if (gameArray.length === 0) {
     gameBoard.removeEventListener('click', monitorGame);
     title.innerHTML = "It's a Draw. Click To Play Again.";
@@ -344,8 +344,10 @@ function checkForAndDisplayDraw() {
   }
 }
 
-function remArrVal(arr, value) {
-  let index = arr.indexOf(value);
+function remArrVal(arr, spaceId) {
+  //arr is gameArray, spaceId is a lower case string e.g. 'tl'
+  //removes a space from the gameArray so AI moves can only be chosen from available spaces
+  let index = arr.indexOf(spaceId);
   if (index > -1) {
     arr.splice(index, 1);
   }
