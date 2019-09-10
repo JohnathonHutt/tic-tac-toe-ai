@@ -22,15 +22,17 @@ let didPlayerGo = false;
 const diffButtons = document.getElementById('diffButtons');
 
 diffButtons.addEventListener('click', function(e) {
-  diff = e.target.id;
-  gameOver = false;
-  document.getElementById(diff).classList.add('pressed');
-  let buttons = ['e', 'm', 'h'];
-  for (let i = 0; i < buttons.length; i++) {
-    if (buttons[i] !== diff) {
-      let button = document.getElementById(buttons[i]);
-      if (button.classList.contains('pressed')) {
-        button.classList.remove('pressed');
+  if (e.target.id !== 'diffButtons') {
+    diff = e.target.id;
+    gameOver = false;
+    document.getElementById(diff).classList.add('pressed');
+    let buttons = ['e', 'm', 'h'];
+    for (let i = 0; i < buttons.length; i++) {
+      if (buttons[i] !== diff) {
+        let button = document.getElementById(buttons[i]);
+        if (button.classList.contains('pressed')) {
+          button.classList.remove('pressed');
+        }
       }
     }
   }
