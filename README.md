@@ -1,6 +1,6 @@
 # tic-tac-toe-ai
 
-Challenge the computer in three different AI modes.
+Challenge the computer in three different 'AI' modes.
 
 Just select a difficulty setting at the top and begin by selecting your first move (by clicking on a tile).
 
